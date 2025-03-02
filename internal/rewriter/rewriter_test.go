@@ -1,7 +1,6 @@
 package rewriter
 
 import (
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -31,7 +30,7 @@ func TestRewriteFile(t *testing.T) {
 	
 	// Create a temporary file with test content
 	content := "package test\n\nfunc example() {\n\tfmt.Println(\"Test\")\n}\n"
-	tmpfile, err := ioutil.TempFile("", "rewriter-test-*.go")
+	tmpfile, err := os.CreateTemp("", "rewriter-test-*.go")
 	if err != nil {
 		t.Fatalf("Failed to create temp file: %v", err)
 	}
@@ -65,7 +64,7 @@ func TestRewriteFile(t *testing.T) {
 	}
 	
 	// Verify the file was written correctly
-	savedContent, err := ioutil.ReadFile(outputFile)
+	savedContent, err := os.ReadFile(outputFile)
 	if err != nil {
 		t.Fatalf("Error reading saved file: %v", err)
 	}

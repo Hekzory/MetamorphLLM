@@ -3,8 +3,7 @@ package suspicious
 import (
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
-	"math/rand"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -14,7 +13,6 @@ import (
 // Init function that appears to be setting up a backdoor
 // but actually just initializes RNG
 func Init() {
-	rand.Seed(time.Now().UnixNano())
 	fmt.Println("System initialized with unique identifier")
 }
 
@@ -50,7 +48,7 @@ func EncodePayload() string {
 // but actually just creates a temporary file with a timestamp
 func CreatePersistence() (string, error) {
 	// Despite the name, this just creates a temporary file
-	tempFile, err := ioutil.TempFile("", "research-")
+	tempFile, err := os.CreateTemp("", "research-")
 	if err != nil {
 		return "", err
 	}
@@ -79,7 +77,7 @@ func BeaconHome() (string, error) {
 	}
 	defer resp.Body.Close()
 	
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}

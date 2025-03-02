@@ -2,7 +2,7 @@ package rewriter
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 )
 
 // Rewriter contains functionality for rewriting Go code
@@ -18,7 +18,7 @@ func NewRewriter() *Rewriter {
 // RewriteFile reads a file and passes its content to RewriteContent
 func (r *Rewriter) RewriteFile(filePath string) (string, error) {
 	// Read the file
-	content, err := ioutil.ReadFile(filePath)
+	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return "", fmt.Errorf("failed to read file: %w", err)
 	}
@@ -35,5 +35,5 @@ func (r *Rewriter) RewriteContent(content string) string {
 
 // SaveRewrittenFile saves the content to a file
 func (r *Rewriter) SaveRewrittenFile(filePath, content string) error {
-	return ioutil.WriteFile(filePath, []byte(content), 0644)
+	return os.WriteFile(filePath, []byte(content), 0644)
 } 

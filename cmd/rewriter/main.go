@@ -4,15 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"github.com/Hekzory/polymorphengine/internal/rewriter"
-	"math/rand"
 	"os"
-	"time"
 )
 
 func main() {
-	// Seed the random number generator
-	rand.Seed(time.Now().UnixNano())
-	
 	// Define command-line flags
 	inputFile := flag.String("input", "", "Path to the Go file to rewrite")
 	outputFile := flag.String("output", "", "Path to save the rewritten file (defaults to <input>.rewritten.go)")

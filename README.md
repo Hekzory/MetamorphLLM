@@ -34,6 +34,16 @@ To run all tests:
 go test ./internal/...
 ```
 
+## Continuous Integration
+
+This project uses GitHub Actions for continuous integration. Whenever code is pushed to the main branch or a pull request is created, the following checks are automatically run:
+
+- Building the project
+- Running all tests
+- Linting the code for quality assurance
+
+You can see the status of these checks in the GitHub repository.
+
 ## Usage
 
 ### Running the Suspicious Program

@@ -1,0 +1,153 @@
+% !TeX program = xelatex 
+% !TeX spellcheck = russian_english
+\RequirePackage[OT1]{fontenc}
+\documentclass[journal]{INJOITrus}
+
+% Настройка шрифтов
+\usepackage{fontspec}
+\usepackage[english,russian]{babel}
+\setmainfont[Ligatures=TeX, Renderer=ICU]{Times New Roman} % use xelatex
+% Ссылки
+\usepackage{hyperref}
+\usepackage{xcolor}
+% Правильные кавычки, подстраивающиеся под язык дкумента
+\usepackage{csquotes}
+% Переносы
+\usepackage{hyphenat}
+
+%Поддержка математики
+\usepackage{amsthm}
+\usepackage{amstext}
+\usepackage{amsmath}
+\usepackage{amssymb}
+%Красивые дроби
+\usepackage{xfrac}
+%Дополнительные математические окружения
+\usepackage{mathtools}
+%Окружения для набора утверждений и определений
+\theoremstyle{plain}
+\newtheorem{theorem}{Теорема}[section]
+\newtheorem{lemma}{Лемма}[section]
+\newtheorem{corollary}{Следствие}[section]
+\newtheorem{proposition}{Утверждение}[section]
+\newtheorem{theorem*}{Теорема}
+\newtheorem{lemma*}{Лемма}
+\newtheorem{corollary*}{Следствие}
+\newtheorem{proposition*}{Утверждение}
+\theoremstyle{definition}
+\newtheorem{definition}{Определение}[section]
+\newtheorem{remark}{Замечание}[section]
+\newtheorem{example}{Пример}[section]
+\newtheorem{definition*}{Определение}
+\newtheorem{remark*}{Замечание}
+\newtheorem{example*}{Пример}
+
+% Крутой пакет для рисования
+\usepackage{tikz}
+% Работа с графикой
+\usepackage{graphicx}
+% Пусть к папке с рисунками
+\graphicspath{{images/}}
+
+%Хорошие таблицы
+\usepackage{booktabs}
+%Длинные таблицы
+\usepackage{longtable}
+%Предоставляет окружение таблицы со столбцами, которые
+%позволяют установить их фиксированную ширину в процентах
+%и переносить слова в ячейке
+\usepackage{tabu}
+
+
+% Можно указывать имя файлов без расширений
+% LaTeX будет последовательно подставлять перечисленные
+% пока файл не будет найден
+\DeclareGraphicsExtensions{.pdf,.png,.jpg}
+
+% Библиография
+\usepackage[%
+  backend=biber, %подключение пакета biber
+  bibstyle=ieee, %подключение одного из четырех главных стилей biblatex-gost
+  citestyle=numeric-comp, %подключение стиля
+  language=auto, %указание сортировки языков
+  sorting=none, %тип сортировки в библиографии
+  defernumbers=true,
+  doi=true,
+  eprint=false,
+  isbn=false,
+  dashed=true,
+  url=true
+]{biblatex}
+\addbibresource{injoit-rus_ru.bib}
+\addbibresource{injoit-rus_en.bib}
+
+\DeclareSourcemap{
+  \maps[datatype=bibtex]{
+    \map{
+      \perdatasource{injoit-rus_ru.bib}
+      \step[fieldset=keywords, fieldvalue={, RU}, append]
+    }
+    \map{
+      \perdatasource{injoit-rus_en.bib}
+      \step[fieldset=keywords, fieldvalue={, EN}, append]
+    }
+  }
+}
+
+% Настройка
+\input{config}
+
+% Команды пользователя
+\input{usercommands}
+
+%% Попробуйте настроить этот параметр, если большой рисунок вытеснил весь текст со страницы
+%% и вам это не нравится:
+% \renewcommand{\floatpagefraction}{.8}%
+
+
+\begin{document}
+\title{\Title}
+\author{%
+    \Authors
+	\thanks{Статья получена \DateOfSubmission} % Например: 1 сентября 2016
+    \AuthorsInfo
+	\thanks{\Grant}
+}
+
+\maketitle
+\markboth{International Journal of Open Information Technologies ISSN: 2307-8162 vol.~\Vol, no.~\Number, \Year} {}
+
+\setcounter{page}{\FirstPageNumber}
+
+% Внимание! Не забудьте заполнить английскую аннотацию и заголовок в конце документа!
+\begin{abstract}
+\Abstract
+\end{abstract}
+
+\begin{IEEEkeywords}
+\Keywords
+\end{IEEEkeywords}
+
+\Source 
+
+% \bibliographystyle{gost2008}
+% \input{gost_legacy.tex}
+% \bibliography{refs}
+\nocite{*}
+\printbibliography[keyword=RU, title=Библиография]
+
+% Заглавие, аннотация и ключевые слова на английском языке.
+\begin{otherlanguage}{english}
+\title{\TitleEN}
+\author{\AuthorsEN}
+\maketitleeng
+\begin{abstract}
+\AbstractEN
+\end{abstract}
+\begin{IEEEkeywords}
+\KeywordsEN
+\end{IEEEkeywords}
+\nocite{*}
+\printbibliography[keyword=EN, title=References, resetnumbers=true]
+\end{otherlanguage}
+\end{document}

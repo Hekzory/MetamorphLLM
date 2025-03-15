@@ -16,7 +16,7 @@ func main() {
 	flag.Parse()
 	
 	// Create a new rewriter
-	r := rewriter.NewRewriter()
+	r := rewriter.NewLLMRewriter()
 	
 	// Handle non-flag arguments as input files
 	if flag.NArg() > 0 && *inputFile == "" {

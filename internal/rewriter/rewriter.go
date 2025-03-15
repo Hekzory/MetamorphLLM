@@ -112,8 +112,8 @@ func NewRewriter() *Rewriter {
 	return &Rewriter{
 		FileHandler: &FileHandler{},
 		ASTHandler:  NewASTHandler(),
-		Strategy:    NewFunctionCommentStrategy("// This function was rewritten by PolymorphEngine"),
-		DefaultComment: "// This function was rewritten by PolymorphEngine",
+		Strategy:    NewFunctionCommentStrategy("// This function was rewritten by MetamorphLLM"),
+		DefaultComment: "// This function was rewritten by MetamorphLLM",
 	}
 }
 
@@ -154,7 +154,7 @@ func (r *Rewriter) RewriteContent(content string) (string, error) {
 	
 	// If no changes were made, add a comment to the entire file
 	if !rewritten {
-		return content + "\n\n// No changes made by the PolymorphEngine\n", nil
+		return content + "\n\n// No changes made by the MetamorphLLM\n", nil
 	}
 	
 	// Convert the AST back to a string

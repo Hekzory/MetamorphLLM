@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/Hekzory/polymorphengine/internal/rewriter"
+	"github.com/Hekzory/MetamorphLLM/internal/rewriter"
 	"os"
 )
 

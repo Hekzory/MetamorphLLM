@@ -155,7 +155,7 @@ func TestRewriteContent(t *testing.T) {
 	}
 	
 	// Check that it contains the expected function comment
-	if !strings.Contains(rewritten, "This function was rewritten by PolymorphEngine") {
+	if !strings.Contains(rewritten, "This function was rewritten by MetamorphLLM") {
 		t.Error("Rewritten content should contain the function rewrite comment")
 	}
 	
@@ -210,7 +210,7 @@ func TestRewriteFile(t *testing.T) {
 	}
 	
 	// Check that the result contains the function rewrite comment
-	if !strings.Contains(rewritten, "This function was rewritten by PolymorphEngine") {
+	if !strings.Contains(rewritten, "This function was rewritten by MetamorphLLM") {
 		t.Error("Rewritten file should contain the function rewrite comment")
 	}
 	
@@ -288,7 +288,7 @@ func third() {
 	}
 	
 	// Count occurrences of the rewrite comment
-	count := strings.Count(rewritten, "This function was rewritten by PolymorphEngine")
+	count := strings.Count(rewritten, "This function was rewritten by MetamorphLLM")
 	
 	// Should have rewritten all three functions
 	if count != 3 {

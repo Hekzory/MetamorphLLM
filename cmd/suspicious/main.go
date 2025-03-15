@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/Hekzory/polymorphengine/internal/suspicious"
+	"github.com/Hekzory/MetamorphLLM/internal/suspicious"
 	"os"
 	"strings"
 	"time"

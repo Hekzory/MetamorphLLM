@@ -1,4 +1,4 @@
-# PolymorphEngine - Code Rewriting for IT Security Research
+# MetamorphLLM - Code Rewriting for IT Security Research
 
 This project is a framework for IT security research focusing on code rewrite and demonstration. It consists of two main modules:
 

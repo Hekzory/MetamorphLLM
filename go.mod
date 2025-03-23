@@ -4,14 +4,14 @@ go 1.24.1
 
 require (
 	github.com/google/generative-ai-go v0.19.0
-	google.golang.org/api v0.226.0
+	google.golang.org/api v0.227.0
 )
 
 require (
-	cloud.google.com/go v0.119.0 // indirect
+	cloud.google.com/go v0.120.0 // indirect
 	cloud.google.com/go/ai v0.10.1 // indirect
 	cloud.google.com/go/auth v0.15.0 // indirect
-	cloud.google.com/go/auth/oauth2adapt v0.2.7 // indirect
+	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/compute/metadata v0.6.0 // indirect
 	cloud.google.com/go/longrunning v0.6.6 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect

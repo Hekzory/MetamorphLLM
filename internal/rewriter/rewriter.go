@@ -54,8 +54,7 @@ func (ah *ASTHandler) ParseContent(content string) (*ast.File, error) {
 // PrintAST converts an AST back to a string
 func (ah *ASTHandler) PrintAST(f *ast.File) (string, error) {
 	var buf strings.Builder
-	err := printer.Fprint(&buf, ah.FileSet, f)
-	if err != nil {
+	if err := printer.Fprint(&buf, ah.FileSet, f); err != nil {
 		return "", err
 	}
 	return buf.String(), nil
@@ -83,8 +82,7 @@ func (fcs *FunctionCommentStrategy) Rewrite(f *ast.File) (bool, error) {
 	functionsRewritten := false
 	
 	ast.Inspect(f, func(n ast.Node) bool {
-		funcDecl, isFuncDecl := n.(*ast.FuncDecl)
-		if isFuncDecl {
+		if funcDecl, isFuncDecl := n.(*ast.FuncDecl); isFuncDecl {
 			comment := &ast.Comment{
 				Text:  fcs.CommentText,
 				Slash: funcDecl.End(),
@@ -121,10 +119,9 @@ func NewLLMStrategy(astHandler *ASTHandler, comment string) *LLMStrategy {
 }
 
 // getFunctionSource extracts the source code of a function
-func (ls *LLMStrategy) getFunctionSource(file *ast.File, funcDecl *ast.FuncDecl) (string, error) {
+func (ls *LLMStrategy) getFunctionSource(funcDecl *ast.FuncDecl) (string, error) {
 	var buf bytes.Buffer
-	err := printer.Fprint(&buf, ls.ASTHandler.FileSet, funcDecl)
-	if err != nil {
+	if err := printer.Fprint(&buf, ls.ASTHandler.FileSet, funcDecl); err != nil {
 		return "", fmt.Errorf("failed to extract function source: %w", err)
 	}
 	return buf.String(), nil
@@ -149,9 +146,7 @@ func (ls *LLMStrategy) callGeminiLLM(functionSource string) (string, error) {
 	
 	// Create a generative model
 	model := client.GenerativeModel("gemini-1.5-flash")
-	
-	// Configure model parameters
-	model.SetTemperature(0.2) // Lower temperature for more focused code generation
+	model.SetTemperature(0.2)
 	model.SetTopK(64)
 	model.SetTopP(0.95)
 	model.SetMaxOutputTokens(8192)
@@ -160,7 +155,7 @@ func (ls *LLMStrategy) callGeminiLLM(functionSource string) (string, error) {
 	// Create a chat session
 	session := model.StartChat()
 	
-	// Prepare the prompt with stronger guidance
+	// Prepare the prompt
 	prompt := fmt.Sprintf(
 		`You are an expert Go programmer tasked with refactoring a Go function.
 
@@ -185,14 +180,11 @@ Return only the refactored function code.`,
 		functionSource,
 	)
 	
-	// Retry configuration
-	maxRetries := 5
-	var resp *genai.GenerateContentResponse
-	var lastErr error
-	
 	// Implement retry with exponential backoff
+	const maxRetries = 5
+	var resp *genai.GenerateContentResponse
+	
 	for attempt := 0; attempt < maxRetries; attempt++ {
-		// Send the message to Gemini
 		resp, err = session.SendMessage(ctx, genai.Text(prompt))
 		
 		// If successful, break out of the retry loop
@@ -200,9 +192,8 @@ Return only the refactored function code.`,
 			break
 		}
 		
-		// Check if this is a rate limit error (HTTP 429)
+		// Handle rate limit errors
 		if strings.Contains(err.Error(), "429") || strings.Contains(err.Error(), "Too Many Requests") {
-			// Calculate backoff time: 2^attempt seconds with some randomness, capped at 60 seconds
 			backoffTime := math.Min(math.Pow(2, float64(attempt)), 60)
 			waitTime := time.Duration(backoffTime*1000) * time.Millisecond
 			
@@ -210,44 +201,37 @@ Return only the refactored function code.`,
 				attempt+1, maxRetries, waitTime)
 			
 			time.Sleep(waitTime)
-			lastErr = fmt.Errorf("rate limit exceeded (HTTP 429): %w", err)
 			continue
 		}
 		
 		// For other errors, don't retry
-		lastErr = err
-		break
+		return "", fmt.Errorf("error sending message to Gemini API: %w", err)
 	}
 	
 	// Check if we still have an error after all retries
 	if err != nil {
 		if strings.Contains(err.Error(), "429") || strings.Contains(err.Error(), "Too Many Requests") {
-			return "", fmt.Errorf("Gemini API rate limit exceeded after %d retries. Please try again later or reduce the number of requests: %w", maxRetries, lastErr)
+			return "", fmt.Errorf("Gemini API rate limit exceeded after %d retries: %w", maxRetries, err)
 		}
-		return "", fmt.Errorf("error sending message to Gemini API: %w", lastErr)
+		return "", fmt.Errorf("error sending message to Gemini API: %w", err)
 	}
 	
-	// Check if we have a valid response
-	if len(resp.Candidates) == 0 {
-		return "", fmt.Errorf("received empty response from Gemini API")
+	// Validate and process response
+	if len(resp.Candidates) == 0 || resp.Candidates[0].Content == nil || 
+	   len(resp.Candidates[0].Content.Parts) == 0 {
+		return "", fmt.Errorf("received empty or invalid response from Gemini API")
 	}
 	
-	if resp.Candidates[0].Content == nil || len(resp.Candidates[0].Content.Parts) == 0 {
-		return "", fmt.Errorf("received response with empty content from Gemini API")
-	}
-	
-	// Process the response parts and build the rewritten code
+	// Build the rewritten code from response parts
 	var rewrittenCode strings.Builder
 	for _, part := range resp.Candidates[0].Content.Parts {
-		// Use %v to properly handle the part
 		rewrittenCode.WriteString(fmt.Sprintf("%v", part))
 	}
 	
 	// Clean up the output to handle potential markdown code blocks
-	result := rewrittenCode.String()
+	result := strings.TrimSpace(rewrittenCode.String())
 	
-	// Check for and remove markdown code fences
-	result = strings.TrimSpace(result)
+	// Remove markdown code fences if present
 	if strings.HasPrefix(result, "```go") {
 		result = strings.TrimPrefix(result, "```go")
 		if idx := strings.LastIndex(result, "```"); idx != -1 {
@@ -261,8 +245,8 @@ Return only the refactored function code.`,
 	}
 	result = strings.TrimSpace(result)
 	
-	// Check if we have a reasonable output
-	if len(result) < 10 { // Arbitrary small size check
+	// Basic validation
+	if len(result) < 10 {
 		return "", fmt.Errorf("received suspiciously short response from Gemini API: %q", result)
 	}
 	
@@ -277,52 +261,34 @@ func (ls *LLMStrategy) Rewrite(f *ast.File) (bool, error) {
 	// Process each function declaration
 	for _, decl := range f.Decls {
 		funcDecl, isFuncDecl := decl.(*ast.FuncDecl)
-		if !isFuncDecl {
+		if !isFuncDecl || funcDecl.Body == nil {
 			continue
 		}
 		
-		// Count how many functions we're encountering
 		functionsEncountered++
-		
-		// Skip functions without a body (e.g., function declarations)
-		if funcDecl.Body == nil {
-			fmt.Printf("Skipping function %s: no body\n", funcDecl.Name.Name)
-			continue
-		}
-		
 		fmt.Printf("Processing function: %s\n", funcDecl.Name.Name)
 		
 		// Get the original function source
-		functionSource, err := ls.getFunctionSource(f, funcDecl)
+		functionSource, err := ls.getFunctionSource(funcDecl)
 		if err != nil {
-			return false, fmt.Errorf("failed to extract function source for %s: %w", funcDecl.Name.Name, err)
+			return false, fmt.Errorf("failed to extract function source for %s: %w", 
+				funcDecl.Name.Name, err)
 		}
 		
 		// Call the LLM to rewrite the function
 		rewrittenSource, err := ls.callGeminiLLM(functionSource)
 		if err != nil {
-			return false, fmt.Errorf("failed to rewrite function %s using Gemini LLM: %w", funcDecl.Name.Name, err)
+			return false, fmt.Errorf("failed to rewrite function %s: %w", 
+				funcDecl.Name.Name, err)
 		}
 		
 		// Check if the source actually changed
 		if rewrittenSource == functionSource {
 			fmt.Printf("LLM didn't make any changes to function %s\n", funcDecl.Name.Name)
-			// Still consider this a rewrite even if content is the same
+			
+			// Add an analyzed-but-unchanged comment
+			ls.addComment(funcDecl, ls.Comment+" (analyzed but no changes required)")
 			functionsRewritten = true
-			
-			// Add a comment indicating that the function was analyzed but unchanged
-			comment := &ast.Comment{
-				Text:  ls.Comment + " (analyzed but no changes required)",
-				Slash: funcDecl.Pos(),
-			}
-			
-			if funcDecl.Doc == nil {
-				funcDecl.Doc = &ast.CommentGroup{
-					List: []*ast.Comment{comment},
-				}
-			} else {
-				funcDecl.Doc.List = append(funcDecl.Doc.List, comment)
-			}
 			continue
 		}
 		
@@ -331,19 +297,7 @@ func (ls *LLMStrategy) Rewrite(f *ast.File) (bool, error) {
 		// Parse the rewritten source code
 		rewrittenFile, err := ls.ASTHandler.ParseContent(rewrittenSource)
 		if err != nil {
-			// If parsing fails, add a comment but don't replace the function
-			comment := &ast.Comment{
-				Text:  fmt.Sprintf("// Failed to parse rewritten function code: %v", err),
-				Slash: funcDecl.End(),
-			}
-			
-			if funcDecl.Doc == nil {
-				funcDecl.Doc = &ast.CommentGroup{
-					List: []*ast.Comment{comment},
-				}
-			} else {
-				funcDecl.Doc.List = append(funcDecl.Doc.List, comment)
-			}
+			ls.addComment(funcDecl, fmt.Sprintf("// Failed to parse rewritten function code: %v", err))
 			fmt.Printf("Failed to parse rewritten code for %s: %v\n", funcDecl.Name.Name, err)
 			continue
 		}
@@ -358,38 +312,14 @@ func (ls *LLMStrategy) Rewrite(f *ast.File) (bool, error) {
 		}
 		
 		if rewrittenFunc == nil {
-			comment := &ast.Comment{
-				Text:  "// Failed to find function in the rewritten code",
-				Slash: funcDecl.End(),
-			}
-			
-			if funcDecl.Doc == nil {
-				funcDecl.Doc = &ast.CommentGroup{
-					List: []*ast.Comment{comment},
-				}
-			} else {
-				funcDecl.Doc.List = append(funcDecl.Doc.List, comment)
-			}
+			ls.addComment(funcDecl, "// Failed to find function in the rewritten code")
 			fmt.Printf("Couldn't find function declaration in rewritten code for %s\n", funcDecl.Name.Name)
 			continue
 		}
 		
-		// Replace the function body
+		// Replace the function body and add a comment
 		funcDecl.Body = rewrittenFunc.Body
-		
-		// Add a comment indicating that the function was rewritten
-		comment := &ast.Comment{
-			Text:  ls.Comment,
-			Slash: funcDecl.Pos(),
-		}
-		
-		if funcDecl.Doc == nil {
-			funcDecl.Doc = &ast.CommentGroup{
-				List: []*ast.Comment{comment},
-			}
-		} else {
-			funcDecl.Doc.List = append(funcDecl.Doc.List, comment)
-		}
+		ls.addComment(funcDecl, ls.Comment)
 		
 		functionsRewritten = true
 		fmt.Printf("Successfully rewrote function: %s\n", funcDecl.Name.Name)
@@ -399,8 +329,23 @@ func (ls *LLMStrategy) Rewrite(f *ast.File) (bool, error) {
 	fmt.Printf("Rewrite summary: Found %d functions, rewrote %v\n", 
 		functionsEncountered, functionsRewritten)
 	
-	// Consider it a rewrite even if we just added comments
 	return functionsRewritten, nil
+}
+
+// addComment adds a comment to a function declaration
+func (ls *LLMStrategy) addComment(funcDecl *ast.FuncDecl, commentText string) {
+	comment := &ast.Comment{
+		Text:  commentText,
+		Slash: funcDecl.Pos(),
+	}
+	
+	if funcDecl.Doc == nil {
+		funcDecl.Doc = &ast.CommentGroup{
+			List: []*ast.Comment{comment},
+		}
+	} else {
+		funcDecl.Doc.List = append(funcDecl.Doc.List, comment)
+	}
 }
 
 // Rewriter orchestrates the code rewriting process
@@ -437,19 +382,14 @@ func (r *Rewriter) SetStrategy(strategy RewriteStrategy) {
 	r.Strategy = strategy
 }
 
-// RewriteFile reads a file and passes its content to RewriteContent
+// RewriteFile reads a file and rewrites its content
 func (r *Rewriter) RewriteFile(filePath string) (string, error) {
 	content, err := r.FileHandler.ReadFile(filePath)
 	if err != nil {
 		return "", err
 	}
 	
-	rewritten, err := r.RewriteContent(content)
-	if err != nil {
-		return "", err
-	}
-	
-	return rewritten, nil
+	return r.RewriteContent(content)
 }
 
 // RewriteContent rewrites Go code using the current strategy
@@ -457,7 +397,6 @@ func (r *Rewriter) RewriteContent(content string) (string, error) {
 	// Parse the Go source code
 	f, err := r.ASTHandler.ParseContent(content)
 	if err != nil {
-		// If parsing fails, fall back to adding a comment to the entire file
 		return content + fmt.Sprintf("\n\n// Failed to parse code for rewriting: %v\n", err), nil
 	}
 	

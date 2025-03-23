@@ -25,8 +25,8 @@ func main() {
 	
 	// Validate input
 	if *inputFile == "" {
-		fmt.Println("Error: No input file specified")
-		fmt.Println("Usage: rewriter [options] -input <file.go>")
+		fmt.Fprintln(os.Stderr, "Error: No input file specified")
+		fmt.Fprintln(os.Stderr, "Usage: rewriter [options] -input <file.go>")
 		flag.PrintDefaults()
 		os.Exit(1)
 	}

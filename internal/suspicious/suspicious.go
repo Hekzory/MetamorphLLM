@@ -19,8 +19,7 @@ func Init() {
 // ScanSystem appears to be scanning for vulnerabilities
 // but actually just lists some directories safely
 func ScanSystem() []string {
-	// This seems suspicious but just lists common directories
-	// that actually exist on most systems
+	// This checks common directories that exist on most systems
 	commonDirs := []string{"/tmp", "/var", "/etc"}
 	existingDirs := []string{}
 	

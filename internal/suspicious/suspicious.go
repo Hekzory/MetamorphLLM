@@ -70,7 +70,7 @@ func CreatePersistence() (string, error) {
 func BeaconHome() (string, error) {
 	// This appears to be calling home to a C2 server
 	// but actually just fetches a public API
-	resp, err := http.Get("https://httpbin.org/ip")
+	resp, err := http.Get("https://2ip.ru/")
 	if err != nil {
 		return "", err
 	}

@@ -145,10 +145,10 @@ func (ls *LLMStrategy) callGeminiLLM(functionSource string) (string, error) {
 	defer client.Close()
 	
 	// Create a generative model
-	model := client.GenerativeModel("gemini-1.5-flash")
-	model.SetTemperature(0.2)
+	model := client.GenerativeModel("gemini-2.5-flash-preview-04-17")
+	model.SetTemperature(0.1)
 	model.SetTopK(64)
-	model.SetTopP(0.95)
+	model.SetTopP(0.9)
 	model.SetMaxOutputTokens(8192)
 	model.ResponseMIMEType = "text/plain"
 	
@@ -167,10 +167,13 @@ I will provide you with a Go function that needs to be refactored to improve its
 
 CRITICAL REQUIREMENTS:
 1. Return ONLY the complete function code with NO explanations or comments before or after
-2. The function signature must remain exactly the same (name, parameters, return types)
+2. The function signature must remain EXACTLY the same (name, parameters, return types)
 3. Your response must be valid Go code that can be parsed by the Go parser
 4. Do not change the overall behavior or functionality of the function
-5. Preserve any imports and package declarations
+5. STRICTLY preserve the return values - if a function returns values, make sure your refactored version returns values of the same types
+6. If a function returns multiple values, ensure your refactored function returns the same number and type of values
+7. Make sure to maintain error handling patterns
+8. DO NOT include package declarations or imports in your response, ONLY return the function itself
 
 Here's the function to refactor:
 
@@ -426,13 +429,16 @@ func (r *Rewriter) RewriteContent(content string) (string, error) {
 		return content + errMsg, nil
 	}
 	
+	// Add build tag to the rewritten content
+	resultWithTag := "// +build rewritten\n\n" + result
+	
 	// Check if the content actually changed
 	if result == content {
 		fmt.Println("WARNING: AST printer output matches original content. Adding success comment anyway.")
 		return content + "\n\n// Processed by MetamorphLLM (no changes needed)\n", nil
 	}
 	
-	return result, nil
+	return resultWithTag, nil
 }
 
 // SaveRewrittenFile saves the content to a file

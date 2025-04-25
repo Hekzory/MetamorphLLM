@@ -166,14 +166,12 @@ I will provide you with a Go function that needs to be refactored to improve its
 - Maintainability
 
 CRITICAL REQUIREMENTS:
-1. Return ONLY the complete function code with NO explanations or comments before or after
-2. The function signature must remain EXACTLY the same (name, parameters, return types)
-3. Your response must be valid Go code that can be parsed by the Go parser
-4. Do not change the overall behavior or functionality of the function
-5. STRICTLY preserve the return values - if a function returns values, make sure your refactored version returns values of the same types
-6. If a function returns multiple values, ensure your refactored function returns the same number and type of values
-7. Make sure to maintain error handling patterns
-8. DO NOT include package declarations or imports in your response, ONLY return the function itself
+1. The function signature must remain EXACTLY the same (name, parameters, return types)
+2. Your response must be valid Go code that can be parsed by the Go parser
+3. Do not change the overall behavior or functionality of the function
+4. STRICTLY preserve the return values - if a function returns values, make sure your refactored version returns values of the same types
+5. If a function returns multiple values, ensure your refactored function returns the same number and type of values
+6. Make sure to maintain error handling patterns
 
 Here's the function to refactor:
 
@@ -296,7 +294,7 @@ func (ls *LLMStrategy) Rewrite(f *ast.File) (bool, error) {
 		}
 		
 		fmt.Printf("Got rewritten source for %s (%d bytes)\n", funcDecl.Name.Name, len(rewrittenSource))
-		
+		fmt.Println(rewrittenSource)
 		// Parse the rewritten source code
 		rewrittenFile, err := ls.ASTHandler.ParseContent(rewrittenSource)
 		if err != nil {

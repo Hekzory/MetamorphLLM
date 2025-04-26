@@ -2,33 +2,37 @@ package main
 
 import (
 	"fmt"
-	"github.com/Hekzory/MetamorphLLM/internal/suspicious"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/Hekzory/MetamorphLLM/internal/suspicious"
 )
 
 func main() {
 	printHeader()
-	
+
 	// Initialize the system
 	suspicious.Init()
-	
+
 	// Run all suspicious-looking but harmless operations
 	runScanSystem()
 	runEncodePayload()
 	filename := runCreatePersistence()
 	defer os.Remove(filename) // Clean up
-	
+
 	runObfuscate()
 	runExfiltrate()
 	runExecuteCommand()
 	runBeacon()
-	
+
+	// Generate random data
+	runGenerateRandomData()
+
 	// Clean up
 	fmt.Println("\n[*] Cleaning up tracks...")
 	suspicious.DeleteTracks()
-	
+
 	printFooter()
 }
 
@@ -80,7 +84,7 @@ func runExfiltrate() {
 	sampleData := "This is sample data that would be exfiltrated in a real attack"
 	wordCounts := suspicious.ExfiltrateData(sampleData)
 	fmt.Println("[+] Data analysis complete. Word frequencies:")
-	
+
 	// Print words that occur more than once
 	for word, count := range wordCounts {
 		if count > 1 {
@@ -104,4 +108,10 @@ func runBeacon() {
 		return
 	}
 	fmt.Printf("[+] Response received: %s\n", strings.TrimSpace(response))
-} 
+}
+
+func runGenerateRandomData() {
+	fmt.Println("\n[*] Generating random data...")
+	data := suspicious.GenerateRandomData()
+	fmt.Printf("[+] Generated data: %s\n", data)
+}

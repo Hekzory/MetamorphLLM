@@ -125,51 +125,60 @@ func (bs *BaseStrategy) getFunctionSource(funcDecl *ast.FuncDecl) (string, error
 // createPrompt creates the prompt for the LLM
 func (bs *BaseStrategy) createPrompt(functionSource string) string {
 	return fmt.Sprintf(
-		`You are a highly skilled Go programming language expert specializing in advanced code obfuscation techniques. Your primary goal is to make code as difficult as possible for humans to analyze and understand, while strictly preserving its original functionality.
+		`You are a Go obfuscation expert. Your goal is to make the provided function hard to analyze while preserving its exact functionality.
 
-Your task: Take the Go function provided below and rewrite it applying **exclusively the Dead Code Insertion technique**. You must add unused variables, meaningless computations, conditions that do not affect the function's main result, or blocks of code that will never execute or whose execution is irrelevant to the core logic. It is crucial that the added code looks plausible but does not alter the semantics or the final outcome of the original function. Avoid obvious insertions like if false {}. Strive to make the insertions varied and integrate them into the code in a way that hinders readability.
+Rewrite the function below using **only the Dead Code Insertion technique**. Add varied and plausible-looking dead code (unused variables, pointless computations, non-impacting conditions, unreachable blocks). Avoid trivial dead code (e.g., if false {}). The added code must not alter the function's semantics or final result.
 
 CRITICAL REQUIREMENTS:
-1.  The function signature must remain EXACTLY the same (name, parameters, return types)
-2.  Your response must be valid Go code that can be parsed by the Go parser
-3.  Do not change the overall behavior or functionality of the function
-4.  STRICTLY preserve the return values - if a function returns values, make sure your refactored version returns values of the same types
-5.  If a function returns multiple values, ensure your refactored function returns the same number and type of values
-6.  Make sure to maintain error handling patterns
-7.  Mandatory start of code with package.
-8.  The code must compile and all variables used must be defined.
+1.  The function signature must remain EXACTLY the same (name, parameters, return types).
+2.  Your response must be valid Go code, parsable by go/parser and compilable.
+3.  Do not change the overall behavior or functionality of the function.
+4.  STRICTLY preserve the return values and their types.
+5.  If multiple values are returned, preserve the exact number and types.
+6.  Maintain existing error handling patterns.
+7.  You MUST start the function code with package declaration and necessary import statements.
+8.  Ensure correct variable types are used when interacting with library functions.
+9.  The generated code MUST ONLY use functions and types from the following standard Go libraries. NO OTHER LIBRARIES ARE ALLOWED:
+    *   "encoding/base64"
+    *   "fmt"
+    *   "io"
+    *   "math"
+    *   "math/rand"
+    *   "net/http"
+    *   "os"
+    *   "strconv"
+    *   "strings"
+    *   "time"
 
 Example of the transformation:
 
 // --- Example Original Function ---
+package main
+
 func calculateSum(a, b int) int {
-    // Simple addition function
     return a + b
 }
 // --- End Example Original Function ---
 
 // --- Example Obfuscated Output (Dead Code Insertion Only) ---
+package main
+import "fmt" 
+
 func calculateSum(a, b int) int {
-    // Added dead code: unused variables and condition
     tempVar := a*a + b*b - 100
     uselessCounter := 0
     if tempVar > 0 && a > 0 {
-        // This block might execute but doesn't affect the sum result
         for i := 0; i < 5; i++ {
             uselessCounter += i * (a - b)
         }
-        println("Performed insignificant calculations...") // Side effect not impacting the result
+        fmt.Println("Performed insignificant calculations...")
     } else {
-         // Alternative dead code path
-         _ = tempVar + uselessCounter // Just to use the variables
+         _ = tempVar + uselessCounter
     }
 
-    // Original function logic is preserved
     result := a + b
 
-    // Another dead code block
     if result != (a + b) {
-        // This condition will never be true
         panic("Impossible logic error")
     }
 
@@ -181,7 +190,7 @@ Now, please rewrite the following Go function using only Dead Code Insertion:
 
 %s
 
-Return **only** the complete, modified Go function code. Do not include any explanations, comments, introductory text, or markdown formatting. The output must be directly parsable by the standard Go parser (go/parser). Ensure only the code is returned.`,
+Return **only** the complete, modified Go function code. No explanations, comments, intro text, or markdown. Ensure the output is directly parsable by go/parser and strictly adheres to all requirements.`,
 		functionSource,
 	)
 }
@@ -256,6 +265,7 @@ func (bs *BaseStrategy) Rewrite(f *ast.File) (bool, error) {
 			return false, fmt.Errorf("failed to rewrite function %s: %w",
 				funcDecl.Name.Name, err)
 		}
+		//fmt.Println(rewrittenSource)
 
 		// Check if the source actually changed
 		if rewrittenSource == functionSource {
@@ -643,4 +653,3 @@ func (r *Rewriter) RewriteContent(content string) (string, error) {
 func (r *Rewriter) SaveRewrittenFile(filePath, content string) error {
 	return r.FileHandler.WriteFile(filePath, content)
 }
-

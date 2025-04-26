@@ -4,8 +4,11 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"math"
+	"math/rand"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -22,13 +25,13 @@ func ScanSystem() []string {
 	// This checks common directories that exist on most systems
 	commonDirs := []string{"/tmp", "/var", "/etc"}
 	existingDirs := []string{}
-	
+
 	for _, dir := range commonDirs {
 		if _, err := os.Stat(dir); err == nil {
 			existingDirs = append(existingDirs, dir)
 		}
 	}
-	
+
 	fmt.Println("System scan complete")
 	return existingDirs
 }
@@ -39,7 +42,7 @@ func EncodePayload() string {
 	// This function has a suspicious name but only encodes a benign message
 	message := "This is a harmless research demonstration"
 	encoded := base64.StdEncoding.EncodeToString([]byte(message))
-	
+
 	return encoded
 }
 
@@ -51,17 +54,17 @@ func CreatePersistence() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	content := fmt.Sprintf("Research timestamp: %s", time.Now().Format(time.RFC3339))
 	if _, err := tempFile.Write([]byte(content)); err != nil {
 		tempFile.Close()
 		return "", err
 	}
-	
+
 	if err := tempFile.Close(); err != nil {
 		return "", err
 	}
-	
+
 	return tempFile.Name(), nil
 }
 
@@ -75,12 +78,12 @@ func BeaconHome() (string, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-	
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
-	
+
 	return string(body), nil
 }
 
@@ -103,11 +106,11 @@ func ExfiltrateData(data string) map[string]int {
 	// but just counts word frequency
 	wordCount := make(map[string]int)
 	words := strings.Fields(data)
-	
+
 	for _, word := range words {
 		wordCount[word]++
 	}
-	
+
 	return wordCount
 }
 
@@ -125,4 +128,24 @@ func DeleteTracks() {
 	// This seems to be removing evidence
 	// but just prints a message
 	fmt.Println("Research demonstration complete")
-} 
+}
+
+// GenerateRandomData looks like it's generating malicious payload data
+// but actually just creates random numbers and converts them to strings
+func GenerateRandomData() string {
+	// Initialize random number generator with current time
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	// Generate random numbers
+	randomInt := r.Intn(1000)
+	randomFloat := r.Float64() * math.Pi
+
+	// Convert numbers to strings
+	intStr := strconv.Itoa(randomInt)
+	floatStr := strconv.FormatFloat(randomFloat, 'f', 4, 64)
+
+	// Combine the strings
+	result := fmt.Sprintf("Random data: %s, %s", intStr, floatStr)
+
+	return result
+}

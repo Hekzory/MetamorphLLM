@@ -13,20 +13,20 @@ func TestNewManager(t *testing.T) {
 		t.Errorf("Expected RewriterBinary to be 'rewriter', got '%s'", m.RewriterBinary)
 	}
 	
-	if m.SuspiciousPath != "cmd/suspicious/main.go" {
-		t.Errorf("Expected SuspiciousPath to be 'cmd/suspicious/main.go', got '%s'", m.SuspiciousPath)
+	if m.SuspiciousPath != "internal/suspicious/suspicious.go" {
+		t.Errorf("Expected SuspiciousPath to be 'internal/suspicious/suspicious.go', got '%s'", m.SuspiciousPath)
 	}
 	
-	if m.OutputPath != "cmd/suspicious/main.go.rewritten.go" {
-		t.Errorf("Expected OutputPath to be 'cmd/suspicious/main.go.rewritten.go', got '%s'", m.OutputPath)
+	if m.OutputPath != "internal/suspicious/suspicious.go.rewritten.go" {
+		t.Errorf("Expected OutputPath to be 'internal/suspicious/suspicious.go.rewritten.go', got '%s'", m.OutputPath)
 	}
 	
 	if m.TestTimeout != "30s" {
 		t.Errorf("Expected TestTimeout to be '30s', got '%s'", m.TestTimeout)
 	}
 	
-	if m.KeepRewritten != false {
-		t.Errorf("Expected KeepRewritten to be false, got %v", m.KeepRewritten)
+	if m.KeepRewritten != true {
+		t.Errorf("Expected KeepRewritten to be true, got %v", m.KeepRewritten)
 	}
 }
 
@@ -40,19 +40,23 @@ func TestCleanUp(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 	
 	// Create test files
-	suspDir := filepath.Join(tempDir, "cmd", "suspicious")
+	suspDir := filepath.Join(tempDir, "internal", "suspicious")
 	if err := os.MkdirAll(suspDir, 0755); err != nil {
 		t.Fatalf("Failed to create test directory: %v", err)
 	}
 	
 	// Create test files to clean up
 	testFiles := []string{
-		filepath.Join(suspDir, "main.go.rewritten.go"),
-		filepath.Join(suspDir, "main.go.backup"),
-		filepath.Join(suspDir, "suspicious.backup"),
+		filepath.Join(suspDir, "suspicious.go.rewritten.go"),
+		filepath.Join(suspDir, "suspicious.go.backup"),
+		filepath.Join(filepath.Join(tempDir, "cmd", "suspicious"), "suspicious.backup"),
 	}
 	
 	for _, file := range testFiles {
+		// Make sure parent directory exists
+		if err := os.MkdirAll(filepath.Dir(file), 0755); err != nil {
+			t.Fatalf("Failed to create directory for test file %s: %v", file, err)
+		}
 		if err := os.WriteFile(file, []byte("test content"), 0644); err != nil {
 			t.Fatalf("Failed to create test file %s: %v", file, err)
 		}
@@ -60,37 +64,50 @@ func TestCleanUp(t *testing.T) {
 	
 	// Create a manager with test paths
 	m := NewManager()
-	m.SuspiciousPath = filepath.Join(suspDir, "main.go")
-	m.OutputPath = filepath.Join(suspDir, "main.go.rewritten.go")
+	m.SuspiciousPath = filepath.Join(suspDir, "suspicious.go")
+	m.OutputPath = filepath.Join(suspDir, "suspicious.go.rewritten.go")
+	m.TargetBinaryDir = filepath.Join(tempDir, "cmd", "suspicious")
 	
 	// Run cleanup
 	if err := m.CleanUp(); err != nil {
 		t.Fatalf("CleanUp failed: %v", err)
 	}
 	
-	// Verify files were deleted
+	// Verify files were deleted or kept as expected
 	for _, file := range testFiles {
-		if _, err := os.Stat(file); !os.IsNotExist(err) {
-			t.Errorf("Expected file %s to be deleted, but it still exists", file)
+		if filepath.Base(file) == "suspicious.go.rewritten.go" {
+			// This file should be kept with default settings
+			if _, err := os.Stat(file); os.IsNotExist(err) {
+				t.Errorf("Expected file %s to be kept, but it was deleted", file)
+			}
+		} else {
+			// Backup files should be deleted
+			if _, err := os.Stat(file); !os.IsNotExist(err) {
+				t.Errorf("Expected file %s to be deleted, but it still exists", file)
+			}
 		}
 	}
 	
-	// Test with KeepRewritten = true
+	// Test with KeepRewritten = false
 	for _, file := range testFiles {
+		// Make sure parent directory exists
+		if err := os.MkdirAll(filepath.Dir(file), 0755); err != nil {
+			t.Fatalf("Failed to create directory for test file %s: %v", file, err)
+		}
 		if err := os.WriteFile(file, []byte("test content"), 0644); err != nil {
 			t.Fatalf("Failed to create test file %s: %v", file, err)
 		}
 	}
 	
-	m.KeepRewritten = true
+	m.KeepRewritten = false
 	if err := m.CleanUp(); err != nil {
 		t.Fatalf("CleanUp failed: %v", err)
 	}
 	
-	// Verify files were kept
+	// All files should be deleted with KeepRewritten = false
 	for _, file := range testFiles {
-		if _, err := os.Stat(file); os.IsNotExist(err) {
-			t.Errorf("Expected file %s to be kept, but it was deleted", file)
+		if _, err := os.Stat(file); !os.IsNotExist(err) {
+			t.Errorf("Expected file %s to be deleted, but it still exists", file)
 		}
 	}
 }

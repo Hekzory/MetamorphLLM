@@ -23,9 +23,9 @@ type Manager struct {
 func NewManager() *Manager {
 	return &Manager{
 		RewriterBinary:  "rewriter",
-		SuspiciousPath:  "internal/suspicious/suspicious.go", // Default to the actual logic file
+		SuspiciousPath:  "internal/suspicious/suspicious.go",              // Default to the actual logic file
 		OutputPath:      "internal/suspicious/suspicious.go.rewritten.go", // Default rewritten output path
-		TargetBinaryDir: "cmd/suspicious", // Default directory for the final binary
+		TargetBinaryDir: "cmd/suspicious",                                 // Default directory for the final binary
 		TestTimeout:     "30s",
 		KeepRewritten:   true, // Default to keeping rewritten files
 		ForceRewrite:    false,
@@ -35,7 +35,7 @@ func NewManager() *Manager {
 // RunRewriter executes the rewriter binary to generate rewritten code
 func (m *Manager) RunRewriter() error {
 	fmt.Println("Running rewriter...")
-	
+
 	// Check if the rewritten file already exists
 	if !m.ForceRewrite {
 		if _, err := os.Stat(m.OutputPath); err == nil {
@@ -45,16 +45,16 @@ func (m *Manager) RunRewriter() error {
 	} else if _, err := os.Stat(m.OutputPath); err == nil {
 		fmt.Printf("Rewritten file exists at %s but force rewrite is enabled, proceeding with rewrite\n", m.OutputPath)
 	}
-	
+
 	cmd := exec.Command(m.RewriterBinary, "-input", m.SuspiciousPath)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	
+
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("rewriter failed: %v\nStderr: %s", err, stderr.String())
 	}
-	
+
 	fmt.Println("Rewriter output:", stdout.String())
 	return nil
 }
@@ -62,21 +62,21 @@ func (m *Manager) RunRewriter() error {
 // CompileRewritten compiles the suspicious code using the rewritten source file
 func (m *Manager) CompileRewritten() error {
 	fmt.Println("Compiling rewritten code...")
-	
+
 	// Get the directory of the suspicious source file
 	suspSourceDir := filepath.Dir(m.SuspiciousPath)
 	rewrittenFile := m.OutputPath
-	
+
 	// Original source file name (e.g., suspicious.go)
 	originalFileName := filepath.Base(m.SuspiciousPath)
 	originalFile := filepath.Join(suspSourceDir, originalFileName)
 	backupFile := filepath.Join(suspSourceDir, originalFileName+".backup")
-	
+
 	// Ensure the target binary directory exists
 	if err := os.MkdirAll(m.TargetBinaryDir, 0755); err != nil {
 		return fmt.Errorf("failed to create target binary directory %s: %w", m.TargetBinaryDir, err)
 	}
-	
+
 	// Backup original source file
 	if _, err := os.Stat(originalFile); err == nil {
 		if err := os.Rename(originalFile, backupFile); err != nil {
@@ -85,37 +85,37 @@ func (m *Manager) CompileRewritten() error {
 	} else if !os.IsNotExist(err) {
 		return fmt.Errorf("failed to check original source file %s: %w", originalFile, err)
 	}
-	
+
 	// Move rewritten source file to the original source file name
 	if err := os.Rename(rewrittenFile, originalFile); err != nil {
 		// If this fails, try to restore backup
 		_ = os.Rename(backupFile, originalFile)
 		return fmt.Errorf("failed to move rewritten source file %s to %s: %w", rewrittenFile, originalFile, err)
 	}
-	
+
 	// Compile the target binary package using the rewritten tag
 	outputBinaryPath := filepath.Join(m.TargetBinaryDir, filepath.Base(m.TargetBinaryDir)+".new") // e.g., cmd/suspicious/suspicious.new
-	compileTarget := "./" + m.TargetBinaryDir                                                  // e.g., ./cmd/suspicious
-	
+	compileTarget := "./" + m.TargetBinaryDir                                                     // e.g., ./cmd/suspicious
+
 	cmd := exec.Command("go", "build", "-tags=rewritten", "-o", outputBinaryPath, compileTarget)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout // Capture stdout for potential info
 	cmd.Stderr = &stderr
-	
+
 	if err := cmd.Run(); err != nil {
 		// Restore original source file from backup before returning error
 		_ = os.Rename(backupFile, originalFile)
 		return fmt.Errorf("compilation failed for target %s: %v\nStdout:\n%s\nStderr:\n%s",
 			compileTarget, err, stdout.String(), stderr.String())
 	}
-	
+
 	// Restore original source file name (move rewritten content back to .rewritten.go file)
 	if err := os.Rename(originalFile, rewrittenFile); err != nil {
 		// Try to restore backup if renaming fails
 		_ = os.Rename(backupFile, originalFile)
 		return fmt.Errorf("failed to restore rewritten source file name from %s to %s: %w", originalFile, rewrittenFile, err)
 	}
-	
+
 	// Restore original source file from backup
 	if _, err := os.Stat(backupFile); err == nil {
 		if err := os.Rename(backupFile, originalFile); err != nil {
@@ -125,7 +125,7 @@ func (m *Manager) CompileRewritten() error {
 			return fmt.Errorf("failed to restore original source file from backup: %w", err)
 		}
 	}
-	
+
 	fmt.Printf("Successfully compiled binary: %s\n", outputBinaryPath)
 	return nil
 }
@@ -183,10 +183,10 @@ func (m *Manager) RunTests() error {
 
 	// Now handle any test errors
 	if testErr != nil {
-		return fmt.Errorf("tests failed on rewritten code: %v\nStdout:\n%s\nStderr:\n%s", 
+		return fmt.Errorf("tests failed on rewritten code: %v\nStdout:\n%s\nStderr:\n%s",
 			testErr, stdout.String(), stderr.String())
 	}
-	
+
 	fmt.Println("Test output:", stdout.String())
 	return nil
 }
@@ -194,16 +194,16 @@ func (m *Manager) RunTests() error {
 // DeployBinary replaces the original binary with the new one if tests passed
 func (m *Manager) DeployBinary() error {
 	fmt.Println("Deploying new binary...")
-	
+
 	// Use TargetBinaryDir for paths
 	newBinary := filepath.Join(m.TargetBinaryDir, filepath.Base(m.TargetBinaryDir)+".new")
 	origBinary := filepath.Join(m.TargetBinaryDir, filepath.Base(m.TargetBinaryDir))
-	
+
 	// Check if new binary exists
 	if _, err := os.Stat(newBinary); err != nil {
 		return fmt.Errorf("new binary not found at %s: %w", newBinary, err)
 	}
-	
+
 	// Backup original binary if it exists
 	if _, err := os.Stat(origBinary); err == nil {
 		backupBinary := origBinary + ".backup"
@@ -212,7 +212,7 @@ func (m *Manager) DeployBinary() error {
 		}
 		fmt.Printf("Backed up existing binary to %s\n", backupBinary)
 	}
-	
+
 	// Move new binary to replace original
 	if err := os.Rename(newBinary, origBinary); err != nil {
 		// Attempt to restore backup if deployment fails
@@ -222,7 +222,7 @@ func (m *Manager) DeployBinary() error {
 		}
 		return fmt.Errorf("failed to deploy new binary from %s to %s: %w", newBinary, origBinary, err)
 	}
-	
+
 	fmt.Println("Successfully deployed new binary:", origBinary)
 	return nil
 }
@@ -247,13 +247,13 @@ func (m *Manager) CleanUp() error {
 	} else {
 		fmt.Printf("Keeping rewritten source file for future use: %s\n", m.OutputPath)
 	}
-	
+
 	// Always remove backup files (source and binary)
 	backupFiles := []string{
-		filepath.Join(suspSourceDir, originalFileName+".backup"), // Backup of suspicious.go
+		filepath.Join(suspSourceDir, originalFileName+".backup"),                     // Backup of suspicious.go
 		filepath.Join(m.TargetBinaryDir, filepath.Base(m.TargetBinaryDir)+".backup"), // Backup of the binary
 	}
-	
+
 	for _, file := range backupFiles {
 		if _, err := os.Stat(file); err == nil {
 			if err := os.Remove(file); err != nil {
@@ -263,7 +263,7 @@ func (m *Manager) CleanUp() error {
 			}
 		}
 	}
-	
+
 	// Remove the temporary .new binary if it exists
 	newBinary := filepath.Join(m.TargetBinaryDir, filepath.Base(m.TargetBinaryDir)+".new")
 	if _, err := os.Stat(newBinary); err == nil {
@@ -271,7 +271,7 @@ func (m *Manager) CleanUp() error {
 			fmt.Fprintf(os.Stderr, "Warning: failed to remove temporary new binary %s: %v\n", newBinary, err)
 		}
 	}
-	
+
 	fmt.Println("Cleanup finished.")
 	return nil
 }
@@ -279,32 +279,32 @@ func (m *Manager) CleanUp() error {
 // Run executes the entire process: rewrite, compile, test, and deploy
 func (m *Manager) Run() error {
 	fmt.Println("Starting automated rewrite and deploy process...")
-	
+
 	// Step 1: Run the rewriter
 	if err := m.RunRewriter(); err != nil {
 		return fmt.Errorf("rewriter step failed: %w", err)
 	}
-	
+
 	// Step 2: Compile the rewritten code
 	if err := m.CompileRewritten(); err != nil {
 		return fmt.Errorf("compilation step failed: %w", err)
 	}
-	
+
 	// Step 3: Run tests
 	if err := m.RunTests(); err != nil {
 		return fmt.Errorf("testing step failed: %w", err)
 	}
-	
+
 	// Step 4: Deploy the binary
 	if err := m.DeployBinary(); err != nil {
 		return fmt.Errorf("deployment step failed: %w", err)
 	}
-	
+
 	// Step 5: Clean up
 	if err := m.CleanUp(); err != nil {
 		return fmt.Errorf("cleanup step failed: %w", err)
 	}
-	
+
 	fmt.Println("Process completed successfully!")
 	return nil
 }

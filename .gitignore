@@ -28,3 +28,4 @@ go.work.sum
 *.go.rewritten
 
 build/**
+cmd/suspicious/suspicious

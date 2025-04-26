@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/google/generative-ai-go/genai"
+	openrouter "github.com/revrost/go-openrouter"
 	"google.golang.org/api/option"
 )
 
@@ -104,59 +105,26 @@ func (fcs *FunctionCommentStrategy) Rewrite(f *ast.File) (bool, error) {
 	return functionsRewritten, nil
 }
 
-// LLMStrategy uses an LLM API to rewrite function bodies
-type LLMStrategy struct {
+// BaseStrategy provides common functionality for LLM-based rewriting strategies
+type BaseStrategy struct {
 	ASTHandler *ASTHandler
 	Comment    string
-}
-
-// NewLLMStrategy creates a new LLM strategy
-func NewLLMStrategy(astHandler *ASTHandler, comment string) *LLMStrategy {
-	return &LLMStrategy{
-		ASTHandler: astHandler,
-		Comment:    comment,
-	}
+	// Add interface for concrete strategies to implement
+	rewriteFunc func(string) (string, error)
 }
 
 // getFunctionSource extracts the source code of a function
-func (ls *LLMStrategy) getFunctionSource(funcDecl *ast.FuncDecl) (string, error) {
+func (bs *BaseStrategy) getFunctionSource(funcDecl *ast.FuncDecl) (string, error) {
 	var buf bytes.Buffer
-	if err := printer.Fprint(&buf, ls.ASTHandler.FileSet, funcDecl); err != nil {
+	if err := printer.Fprint(&buf, bs.ASTHandler.FileSet, funcDecl); err != nil {
 		return "", fmt.Errorf("failed to extract function source: %w", err)
 	}
 	return buf.String(), nil
 }
 
-// callGeminiLLM makes an API call to Gemini LLM to rewrite function code
-func (ls *LLMStrategy) callGeminiLLM(functionSource string) (string, error) {
-	ctx := context.Background()
-
-	// Get API key from environment variable
-	apiKey, ok := os.LookupEnv("GEMINI_API_KEY")
-	if !ok {
-		return "", fmt.Errorf("environment variable GEMINI_API_KEY not set")
-	}
-
-	// Create a new Gemini client
-	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
-	if err != nil {
-		return "", fmt.Errorf("failed to create Gemini client: %w", err)
-	}
-	defer client.Close()
-
-	// Create a generative model
-	model := client.GenerativeModel("gemini-2.5-flash-preview-04-17")
-	model.SetTemperature(0.1)
-	model.SetTopK(64)
-	model.SetTopP(0.9)
-	model.SetMaxOutputTokens(8192)
-	model.ResponseMIMEType = "text/plain"
-
-	// Create a chat session
-	session := model.StartChat()
-
-	// Prepare the prompt
-	prompt := fmt.Sprintf(
+// createPrompt creates the prompt for the LLM
+func (bs *BaseStrategy) createPrompt(functionSource string) string {
+	return fmt.Sprintf(
 		`You are a highly skilled Go programming language expert specializing in advanced code obfuscation techniques. Your primary goal is to make code as difficult as possible for humans to analyze and understand, while strictly preserving its original functionality.
 
 Your task: Take the Go function provided below and rewrite it applying **exclusively the Dead Code Insertion technique**. You must add unused variables, meaningless computations, conditions that do not affect the function's main result, or blocks of code that will never execute or whose execution is irrelevant to the core logic. It is crucial that the added code looks plausible but does not alter the semantics or the final outcome of the original function. Avoid obvious insertions like if false {}. Strive to make the insertions varied and integrate them into the code in a way that hinders readability.
@@ -216,6 +184,176 @@ Now, please rewrite the following Go function using only Dead Code Insertion:
 Return **only** the complete, modified Go function code. Do not include any explanations, comments, introductory text, or markdown formatting. The output must be directly parsable by the standard Go parser (go/parser). Ensure only the code is returned.`,
 		functionSource,
 	)
+}
+
+// cleanResponse cleans and validates the response from LLM
+func (bs *BaseStrategy) cleanResponse(response string) (string, error) {
+	result := strings.TrimSpace(response)
+
+	// Remove markdown code fences if present
+	if strings.HasPrefix(result, "```go") {
+		result = strings.TrimPrefix(result, "```go")
+		if idx := strings.LastIndex(result, "```"); idx != -1 {
+			result = result[:idx]
+		}
+	} else if strings.HasPrefix(result, "```") {
+		result = strings.TrimPrefix(result, "```")
+		if idx := strings.LastIndex(result, "```"); idx != -1 {
+			result = result[:idx]
+		}
+	}
+	result = strings.TrimSpace(result)
+
+	// Basic validation
+	if len(result) < 10 {
+		return "", fmt.Errorf("received suspiciously short response: %q", result)
+	}
+
+	return result, nil
+}
+
+// addComment adds a comment to a function declaration
+func (bs *BaseStrategy) addComment(funcDecl *ast.FuncDecl, commentText string) {
+	comment := &ast.Comment{
+		Text:  commentText,
+		Slash: funcDecl.Pos(),
+	}
+
+	if funcDecl.Doc == nil {
+		funcDecl.Doc = &ast.CommentGroup{
+			List: []*ast.Comment{comment},
+		}
+	} else {
+		funcDecl.Doc.List = append(funcDecl.Doc.List, comment)
+	}
+}
+
+// Rewrite implements the RewriteStrategy interface
+func (bs *BaseStrategy) Rewrite(f *ast.File) (bool, error) {
+	functionsRewritten := false
+	functionsEncountered := 0
+
+	// Process each function declaration
+	for _, decl := range f.Decls {
+		funcDecl, isFuncDecl := decl.(*ast.FuncDecl)
+		if !isFuncDecl || funcDecl.Body == nil {
+			continue
+		}
+
+		functionsEncountered++
+		fmt.Printf("Processing function: %s\n", funcDecl.Name.Name)
+
+		// Get the original function source
+		functionSource, err := bs.getFunctionSource(funcDecl)
+		if err != nil {
+			return false, fmt.Errorf("failed to extract function source for %s: %w",
+				funcDecl.Name.Name, err)
+		}
+
+		// Get the rewritten function source from concrete implementation
+		rewrittenSource, err := bs.rewriteFunc(functionSource)
+		if err != nil {
+			return false, fmt.Errorf("failed to rewrite function %s: %w",
+				funcDecl.Name.Name, err)
+		}
+
+		// Check if the source actually changed
+		if rewrittenSource == functionSource {
+			fmt.Printf("LLM didn't make any changes to function %s\n", funcDecl.Name.Name)
+
+			// Add an analyzed-but-unchanged comment
+			bs.addComment(funcDecl, bs.Comment+" (analyzed but no changes required)")
+			functionsRewritten = true
+			continue
+		}
+
+		fmt.Printf("Got rewritten source for %s (%d bytes)\n", funcDecl.Name.Name, len(rewrittenSource))
+		// Parse the rewritten source code
+		rewrittenFile, err := bs.ASTHandler.ParseContent(rewrittenSource)
+		if err != nil {
+			bs.addComment(funcDecl, fmt.Sprintf("// Failed to parse rewritten function code: %v", err))
+			fmt.Printf("Failed to parse rewritten code for %s: %v\n", funcDecl.Name.Name, err)
+			continue
+		}
+
+		// Find the function in the rewritten code
+		var rewrittenFunc *ast.FuncDecl
+		for _, d := range rewrittenFile.Decls {
+			if fd, ok := d.(*ast.FuncDecl); ok {
+				rewrittenFunc = fd
+				break
+			}
+		}
+
+		if rewrittenFunc == nil {
+			bs.addComment(funcDecl, "// Failed to find function in the rewritten code")
+			fmt.Printf("Couldn't find function declaration in rewritten code for %s\n", funcDecl.Name.Name)
+			continue
+		}
+
+		// Replace the function body and add a comment
+		funcDecl.Body = rewrittenFunc.Body
+		bs.addComment(funcDecl, bs.Comment)
+
+		functionsRewritten = true
+		fmt.Printf("Successfully rewrote function: %s\n", funcDecl.Name.Name)
+	}
+
+	// Log summary
+	fmt.Printf("Rewrite summary: Found %d functions, rewrote %v\n",
+		functionsEncountered, functionsRewritten)
+
+	return functionsRewritten, nil
+}
+
+// LLMStrategy uses an LLM API to rewrite function bodies
+type LLMStrategy struct {
+	BaseStrategy
+}
+
+// NewLLMStrategy creates a new LLM strategy
+func NewLLMStrategy(astHandler *ASTHandler, comment string) *LLMStrategy {
+	ls := &LLMStrategy{
+		BaseStrategy: BaseStrategy{
+			ASTHandler: astHandler,
+			Comment:    comment,
+		},
+	}
+	// Set the function to use LLMStrategy's implementation
+	ls.rewriteFunc = ls.callGeminiLLM
+	return ls
+}
+
+// callGeminiLLM makes an API call to Gemini LLM to rewrite function code
+func (ls *LLMStrategy) callGeminiLLM(functionSource string) (string, error) {
+	ctx := context.Background()
+
+	// Get API key from environment variable
+	apiKey, ok := os.LookupEnv("GEMINI_API_KEY")
+	if !ok {
+		return "", fmt.Errorf("environment variable GEMINI_API_KEY not set")
+	}
+
+	// Create a new Gemini client
+	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
+	if err != nil {
+		return "", fmt.Errorf("failed to create Gemini client: %w", err)
+	}
+	defer client.Close()
+
+	// Create a generative model
+	model := client.GenerativeModel("gemini-2.5-flash-preview-04-17")
+	model.SetTemperature(0.1)
+	model.SetTopK(64)
+	model.SetTopP(0.9)
+	model.SetMaxOutputTokens(8192)
+	model.ResponseMIMEType = "text/plain"
+
+	// Create a chat session
+	session := model.StartChat()
+
+	// Prepare the prompt
+	prompt := ls.createPrompt(functionSource)
 
 	// Implement retry with exponential backoff
 	const maxRetries = 5
@@ -265,125 +403,134 @@ Return **only** the complete, modified Go function code. Do not include any expl
 		rewrittenCode.WriteString(fmt.Sprintf("%v", part))
 	}
 
-	// Clean up the output to handle potential markdown code blocks
-	result := strings.TrimSpace(rewrittenCode.String())
-
-	// Remove markdown code fences if present
-	if strings.HasPrefix(result, "```go") {
-		result = strings.TrimPrefix(result, "```go")
-		if idx := strings.LastIndex(result, "```"); idx != -1 {
-			result = result[:idx]
-		}
-	} else if strings.HasPrefix(result, "```") {
-		result = strings.TrimPrefix(result, "```")
-		if idx := strings.LastIndex(result, "```"); idx != -1 {
-			result = result[:idx]
-		}
-	}
-	result = strings.TrimSpace(result)
-
-	// Basic validation
-	if len(result) < 10 {
-		return "", fmt.Errorf("received suspiciously short response from Gemini API: %q", result)
-	}
-
-	return result, nil
+	return ls.cleanResponse(rewrittenCode.String())
 }
 
-// Rewrite implements the RewriteStrategy interface
-func (ls *LLMStrategy) Rewrite(f *ast.File) (bool, error) {
-	functionsRewritten := false
-	functionsEncountered := 0
+// OpenRouterStrategy uses OpenRouter API to rewrite function bodies
+type OpenRouterStrategy struct {
+	BaseStrategy
+}
 
-	// Process each function declaration
-	for _, decl := range f.Decls {
-		funcDecl, isFuncDecl := decl.(*ast.FuncDecl)
-		if !isFuncDecl || funcDecl.Body == nil {
-			continue
-		}
+// NewOpenRouterStrategy creates a new OpenRouter strategy
+func NewOpenRouterStrategy(astHandler *ASTHandler, comment string) *OpenRouterStrategy {
+	ors := &OpenRouterStrategy{
+		BaseStrategy: BaseStrategy{
+			ASTHandler: astHandler,
+			Comment:    comment,
+		},
+	}
+	// Set the function to use OpenRouterStrategy's implementation
+	ors.rewriteFunc = ors.callOpenRouterLLM
+	return ors
+}
 
-		functionsEncountered++
-		fmt.Printf("Processing function: %s\n", funcDecl.Name.Name)
+// callOpenRouterLLM makes an API call to OpenRouter LLM to rewrite function code
+func (ors *OpenRouterStrategy) callOpenRouterLLM(functionSource string) (string, error) {
+	ctx := context.Background()
 
-		// Get the original function source
-		functionSource, err := ls.getFunctionSource(funcDecl)
-		if err != nil {
-			return false, fmt.Errorf("failed to extract function source for %s: %w",
-				funcDecl.Name.Name, err)
-		}
+	// Get API key from environment variable
+	apiKey, ok := os.LookupEnv("OPENROUTER_API_KEY")
+	if !ok {
+		return "", fmt.Errorf("environment variable OPENROUTER_API_KEY not set")
+	}
 
-		// Call the LLM to rewrite the function
-		rewrittenSource, err := ls.callGeminiLLM(functionSource)
-		if err != nil {
-			return false, fmt.Errorf("failed to rewrite function %s: %w",
-				funcDecl.Name.Name, err)
-		}
+	// Create a new OpenRouter client
+	client := openrouter.NewClient(
+		apiKey,
+		openrouter.WithXTitle("MetamorphLLM"),
+		openrouter.WithHTTPReferer("https://github.com/Hekzory/MetamorphLLM"),
+	)
 
-		// Check if the source actually changed
-		if rewrittenSource == functionSource {
-			fmt.Printf("LLM didn't make any changes to function %s\n", funcDecl.Name.Name)
+	// Prepare the prompt
+	prompt := ors.createPrompt(functionSource)
 
-			// Add an analyzed-but-unchanged comment
-			ls.addComment(funcDecl, ls.Comment+" (analyzed but no changes required)")
-			functionsRewritten = true
-			continue
-		}
+	// Call the OpenRouter API
+	resp, err := client.CreateChatCompletion(
+		ctx,
+		openrouter.ChatCompletionRequest{
+			Model: "deepseek/deepseek-chat-v3-0324:free", // Can be configured as needed
+			Messages: []openrouter.ChatCompletionMessage{
+				{
+					Role:    openrouter.ChatMessageRoleUser,
+					Content: openrouter.Content{Text: prompt},
+				},
+			},
+			Temperature: 0.1,
+			MaxTokens:   8192,
+			TopP:        0.9,
+		},
+	)
 
-		fmt.Printf("Got rewritten source for %s (%d bytes)\n", funcDecl.Name.Name, len(rewrittenSource))
-		fmt.Println(rewrittenSource)
-		// Parse the rewritten source code
-		rewrittenFile, err := ls.ASTHandler.ParseContent(rewrittenSource)
-		if err != nil {
-			ls.addComment(funcDecl, fmt.Sprintf("// Failed to parse rewritten function code: %v", err))
-			fmt.Printf("Failed to parse rewritten code for %s: %v\n", funcDecl.Name.Name, err)
-			continue
-		}
+	// Implement retry with exponential backoff
+	const maxRetries = 5
+	var rewrittenCode string
+	attempt := 0
 
-		// Find the function in the rewritten code
-		var rewrittenFunc *ast.FuncDecl
-		for _, d := range rewrittenFile.Decls {
-			if fd, ok := d.(*ast.FuncDecl); ok {
-				rewrittenFunc = fd
+	for attempt < maxRetries {
+		if err == nil {
+			// Extract the response content
+			if len(resp.Choices) > 0 && resp.Choices[0].Message.Content.Text != "" {
+				rewrittenCode = resp.Choices[0].Message.Content.Text
 				break
+			} else {
+				err = fmt.Errorf("received empty response from OpenRouter API")
 			}
 		}
 
-		if rewrittenFunc == nil {
-			ls.addComment(funcDecl, "// Failed to find function in the rewritten code")
-			fmt.Printf("Couldn't find function declaration in rewritten code for %s\n", funcDecl.Name.Name)
+		// Handle rate limit errors
+		if strings.Contains(err.Error(), "429") || strings.Contains(err.Error(), "Too Many Requests") {
+			attempt++
+			backoffTime := math.Min(math.Pow(2, float64(attempt)), 60)
+			waitTime := time.Duration(backoffTime*1000) * time.Millisecond
+
+			fmt.Printf("Rate limited by OpenRouter API. Attempt %d/%d. Waiting %v before retrying...\n",
+				attempt, maxRetries, waitTime)
+
+			time.Sleep(waitTime)
+
+			// Retry the API call
+			resp, err = client.CreateChatCompletion(
+				ctx,
+				openrouter.ChatCompletionRequest{
+					Model: "deepseek/deepseek-chat-v3-0324:free",
+					Messages: []openrouter.ChatCompletionMessage{
+						{
+							Role:    openrouter.ChatMessageRoleUser,
+							Content: openrouter.Content{Text: prompt},
+						},
+					},
+					Temperature: 0.1,
+					MaxTokens:   8192,
+					TopP:        0.9,
+				},
+			)
 			continue
 		}
 
-		// Replace the function body and add a comment
-		funcDecl.Body = rewrittenFunc.Body
-		ls.addComment(funcDecl, ls.Comment)
-
-		functionsRewritten = true
-		fmt.Printf("Successfully rewrote function: %s\n", funcDecl.Name.Name)
+		// For other errors, don't retry
+		return "", fmt.Errorf("error sending message to OpenRouter API: %w", err)
 	}
 
-	// Log summary
-	fmt.Printf("Rewrite summary: Found %d functions, rewrote %v\n",
-		functionsEncountered, functionsRewritten)
-
-	return functionsRewritten, nil
-}
-
-// addComment adds a comment to a function declaration
-func (ls *LLMStrategy) addComment(funcDecl *ast.FuncDecl, commentText string) {
-	comment := &ast.Comment{
-		Text:  commentText,
-		Slash: funcDecl.Pos(),
-	}
-
-	if funcDecl.Doc == nil {
-		funcDecl.Doc = &ast.CommentGroup{
-			List: []*ast.Comment{comment},
+	// Check if we still have an error after all retries
+	if err != nil {
+		if strings.Contains(err.Error(), "429") || strings.Contains(err.Error(), "Too Many Requests") {
+			return "", fmt.Errorf("OpenRouter API rate limit exceeded after %d retries: %w", maxRetries, err)
 		}
-	} else {
-		funcDecl.Doc.List = append(funcDecl.Doc.List, comment)
+		return "", fmt.Errorf("error sending message to OpenRouter API: %w", err)
 	}
+
+	return ors.cleanResponse(rewrittenCode)
 }
+
+// APIType represents the type of API to use for rewriting
+type APIType string
+
+const (
+	// APITypeGemini represents Google's Gemini API
+	APITypeGemini APIType = "gemini"
+	// APITypeOpenRouter represents OpenRouter API
+	APITypeOpenRouter APIType = "openrouter"
+)
 
 // Rewriter orchestrates the code rewriting process
 type Rewriter struct {
@@ -405,12 +552,29 @@ func NewRewriter() *Rewriter {
 
 // NewLLMRewriter creates a new Rewriter with LLM strategy
 func NewLLMRewriter() *Rewriter {
+	return NewLLMRewriterWithAPI(APITypeGemini)
+}
+
+// NewLLMRewriterWithAPI creates a new Rewriter with the specified API type
+func NewLLMRewriterWithAPI(apiType APIType) *Rewriter {
 	astHandler := NewASTHandler()
+	var strategy RewriteStrategy
+	var commentPrefix string
+
+	switch apiType {
+	case APITypeOpenRouter:
+		strategy = NewOpenRouterStrategy(astHandler, "// This function was rewritten by OpenRouter LLM")
+		commentPrefix = "// This function was rewritten by OpenRouter LLM"
+	default: // APITypeGemini or any other case
+		strategy = NewLLMStrategy(astHandler, "// This function was rewritten by Gemini LLM")
+		commentPrefix = "// This function was rewritten by Gemini LLM"
+	}
+
 	return &Rewriter{
 		FileHandler:    &FileHandler{},
 		ASTHandler:     astHandler,
-		Strategy:       NewLLMStrategy(astHandler, "// This function was rewritten by Gemini LLM"),
-		DefaultComment: "// This function was rewritten by Gemini LLM",
+		Strategy:       strategy,
+		DefaultComment: commentPrefix,
 	}
 }
 
@@ -479,3 +643,4 @@ func (r *Rewriter) RewriteContent(content string) (string, error) {
 func (r *Rewriter) SaveRewrittenFile(filePath, content string) error {
 	return r.FileHandler.WriteFile(filePath, content)
 }
+

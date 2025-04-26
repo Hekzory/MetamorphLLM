@@ -11,12 +11,24 @@ func main() {
 	// Define command-line flags
 	inputFile := flag.String("input", "", "Path to the Go file to rewrite")
 	outputFile := flag.String("output", "", "Path to save the rewritten file (defaults to <input>.rewritten.go)")
+	apiFlag := flag.String("api", "openrouter", "API to use for rewriting: 'gemini' or 'openrouter'")
 	
 	// Parse flags
 	flag.Parse()
 	
-	// Create a new rewriter
-	r := rewriter.NewLLMRewriter()
+	// Determine which API to use
+	var apiType rewriter.APIType
+	switch *apiFlag {
+	case "openrouter":
+		apiType = rewriter.APITypeOpenRouter
+		fmt.Println("Using OpenRouter API for rewriting")
+	default:
+		apiType = rewriter.APITypeGemini
+		fmt.Println("Using Gemini API for rewriting")
+	}
+	
+	// Create a new rewriter with the specified API
+	r := rewriter.NewLLMRewriterWithAPI(apiType)
 	
 	// Handle non-flag arguments as input files
 	if flag.NArg() > 0 && *inputFile == "" {

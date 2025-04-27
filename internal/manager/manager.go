@@ -6,6 +6,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/Hekzory/MetamorphLLM/internal/metrics"
 )
 
 // Manager handles the automated process of rewriting code, testing, and deploying
@@ -276,6 +278,46 @@ func (m *Manager) CleanUp() error {
 	return nil
 }
 
+// CalculateMetrics calculates and reports code metrics for both original and rewritten code
+func (m *Manager) CalculateMetrics() error {
+	fmt.Println("Calculating code metrics...")
+
+	// Calculate metrics for original code
+	originalMetrics, err := metrics.CalculateMetrics(m.SuspiciousPath)
+	if err != nil {
+		return fmt.Errorf("failed to calculate metrics for original code: %w", err)
+	}
+
+	// Calculate metrics for rewritten code
+	rewrittenMetrics, err := metrics.CalculateMetrics(m.OutputPath)
+	if err != nil {
+		return fmt.Errorf("failed to calculate metrics for rewritten code: %w", err)
+	}
+
+	// Calculate deltas
+	locDelta, ccDelta, cogCDelta := metrics.CalculateDeltaMetrics(originalMetrics, rewrittenMetrics)
+
+	// Print metrics report
+	fmt.Printf("\nCode Metrics Report:\n")
+	fmt.Printf("===================\n")
+	fmt.Printf("Original Code:\n")
+	fmt.Printf("  Lines of Code (LOC): %d\n", originalMetrics.LOC)
+	fmt.Printf("  Cyclomatic Complexity (CC): %d\n", originalMetrics.CC)
+	fmt.Printf("  Cognitive Complexity (CogC): %d\n", originalMetrics.CogC)
+	fmt.Printf("  Total Functions: %d\n", originalMetrics.FuncCount)
+	fmt.Printf("\nRewritten Code:\n")
+	fmt.Printf("  Lines of Code (LOC): %d\n", rewrittenMetrics.LOC)
+	fmt.Printf("  Cyclomatic Complexity (CC): %d\n", rewrittenMetrics.CC)
+	fmt.Printf("  Cognitive Complexity (CogC): %d\n", rewrittenMetrics.CogC)
+	fmt.Printf("  Total Functions: %d\n", rewrittenMetrics.FuncCount)
+	fmt.Printf("\nDelta Metrics:\n")
+	fmt.Printf("  LOC Change: %.2f%%\n", locDelta)
+	fmt.Printf("  CC Change: %.2f%%\n", ccDelta)
+	fmt.Printf("  CogC Change: %.2f%%\n", cogCDelta)
+
+	return nil
+}
+
 // Run executes the entire process: rewrite, compile, test, and deploy
 func (m *Manager) Run() error {
 	fmt.Println("Starting automated rewrite and deploy process...")
@@ -285,22 +327,27 @@ func (m *Manager) Run() error {
 		return fmt.Errorf("rewriter step failed: %w", err)
 	}
 
-	// Step 2: Compile the rewritten code
+	// Step 2: Calculate metrics
+	if err := m.CalculateMetrics(); err != nil {
+		return fmt.Errorf("metrics calculation failed: %w", err)
+	}
+
+	// Step 3: Compile the rewritten code
 	if err := m.CompileRewritten(); err != nil {
 		return fmt.Errorf("compilation step failed: %w", err)
 	}
 
-	// Step 3: Run tests
+	// Step 4: Run tests
 	if err := m.RunTests(); err != nil {
 		return fmt.Errorf("testing step failed: %w", err)
 	}
 
-	// Step 4: Deploy the binary
+	// Step 5: Deploy the binary
 	if err := m.DeployBinary(); err != nil {
 		return fmt.Errorf("deployment step failed: %w", err)
 	}
 
-	// Step 5: Clean up
+	// Step 6: Clean up
 	if err := m.CleanUp(); err != nil {
 		return fmt.Errorf("cleanup step failed: %w", err)
 	}

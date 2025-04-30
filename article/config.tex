@@ -3,33 +3,37 @@
 % Вставьте ссылки на файлы с текстом статьи
 \newcommand*{\Source}{
     \input{main_files/01-intro}
-    \input{main_files/02-conclusion}
+    \input{main_files/02-literature}
+    \input{main_files/03-methodic}
+    \input{main_files/04-metrics}
+    \input{main_files/05-results}
+    \input{main_files/06-conclusion}
 }
 
 % Название статьи
 \newcommand*{\Title}{%
-    Страдания юного Вертера%
+    Автоматизация метаморфизма кода Go с использованием больших языковых моделей%
 }
 
 % Название статьи на английском
 \newcommand*{\TitleEN}{%
-    Lorem ipsum%
+    Automating the process of code metamorphism using large language models%
 }
 
 % Список авторов работы
 \newcommand*{\Authors}{%
-    И.~И.~Образцов, П.~П.~Иванов%
+    Д.~К.~Мурадян, О.~В.~Цветков%
 }
 
 % Список авторов работы на английском
 \newcommand*{\AuthorsEN}{%
-    John Doe, James Smith%
+    David Muradyan, Oleg Tsvetkov%
 }
 
 % Информация об авторах
 \newcommand*{\AuthorsInfo}{%
-    \thanks{Иван Иванович Образцов, МГУ им. М.В.~Ломоносова, (email: username@domain.ru).}%
-    \thanks{Петр Петрович Иванов, МГУ им. М.В.~Ломоносова, (email: username@domain.ru).}%
+    \thanks{Давид Каренович Мурадян, МГУ им. М.В.~Ломоносова, (email: username@domain.ru).}%
+    \thanks{Олег Вячеславович Цветков, РТУ МИРЭА, (email: username@domain.ru).}%
 }
 
 % Дата, когда статья была отправлена в редакцию
@@ -44,26 +48,22 @@
 
 % Аннотация
 \newcommand*{\Abstract}{%
-    Душа моя озарена неземной радостью, как эти чудесные весенние утра, которыми я наслаждаюсь от всего сердца. Я совсем один и блаженствую в здешнем краю, словно созданном для таких, как я. Я так счастлив, мой друг, так упоен ощущением покоя, что искусство мое страдает от этого. Ни одного штриха не мог бы я сделать, а никогда не был таким большим художником, как в эти минуты.
-
-    И это тоже аннотация!
+     Метаморфизм кода является мощной техникой защиты программного обеспечения от реверс-инжиниринга, однако его ручная реализация крайне трудоемка. В данной работе представлен инструментарий для автоматизации процесса метаморфизма кода на языке Go с использованием больших языковых моделей. Инструментарий реализует модульную архитектуру. Проведена экспериментальная оценка с использованием трех современных больших языковых моделей (gemini-2.5-flash-preview-04-17, deepseek-chat-v3-0324, gemini-2.0-flash). Эффективность оценивалась по метрикам функциональной эквивалентности, изменения количества строк кода, цикломатической и когнитивной сложностей. Результаты демонстрируют возможность автоматизации метаморфизма с помощью LLM, значительное усложнение кода по метрикам CC и CogC, но выявляют проблемы со стабильностью сохранения функциональности при модификации потока управления у некоторых моделей. Работа показывает перспективность использования LLM для задач обфускации кода, но подчеркивает необходимость дальнейших исследований для повышения надежности и оценки реальной стойкости кода.
 }
 
 % Аннотация на английском
 \newcommand*{\AbstractEN}{%
-    Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer tincidunt.
-
-    Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor.
+    Code metamorphism is a powerful technique for protecting software from reverse engineering, but its manual implementation is extremely labor-intensive. This paper presents a toolkit for automating the code metamorphism process for the Go language using large language models. The toolkit implements a modular architecture and applies two key techniques: dead code insertion and control flow modification, delegating the generation of transformations to external LLMs. An experimental evaluation was conducted using three modern LLMs (gemini-2.5-flash-preview-04-17, deepseek-chat-v3-0324, gemini-2.0-flash). Effectiveness was assessed using metrics of functional equivalence, change in lines of code, cyclomatic complexity, and cognitive complexity. The results demonstrate the feasibility of automating metamorphism with LLMs, a significant increase in code complexity according to CC and CogC metrics, but reveal issues with the stability of maintaining functional equivalence during control flow modification for some models. The work shows the promise of using LLMs for code obfuscation tasks but highlights the need for further research to improve reliability and assess the real-world resilience of the code.
 }
 
 % Ключевые слова
 \newcommand*{\Keywords}{%
-    словесные горы, страна гласных%
+    метаморфизм кода, обфускация кода, большие языковые модели, LLM, Go, автоматизация, защита программного обеспечения, сложность кода, цикломатическая сложность, когнитивная сложность%
 }
 
 % Ключевые слова на английском
 \newcommand*{\KeywordsEN}{%
-    keyword1, key word 2, keyword 3%
+    сode metamorphism, code obfuscation, large language models, LLM, Go, automation, software protection, code complexity, cyclomatic complexity, cognitive complexity%
 }
 
 %%%% Эти параметры нужно задать после принятия статьи к опубликованию

@@ -1,16 +1,168 @@
-%% Определите в этом файле английскую версию библиографии
-%% Для этого расположите библиографию из основного файла в порядке цитирования
-%% основной библиографии.
-%% Для русских библиографических элементов нужно выполнить транслитерацию, например, 
-%% с помощью сайта http://www.translit.net/ru/bgn/
-%% а также перевести элемент на английский язык.
-%% Преобразованию подвергаются ВСЕ поля элемента (например, название журнала, место печати и т.п.),
-%% а не только название статьи 
-%% Перевод указывается в квадратных скобках после транслитерации
-%%%%%%%%%%% НЕ ЗАБУДЬТЕ МОДИФИЦИРОВАТЬ НАЗВАНИЕ ЭЛЕМЕНТА (например, добавив суффикс "_en") %%%%%%%%%%%%%%
-
-@book{goethe_en, %%% Добавил суффикс "_en", чтобы не было проблем с цитированием
-    author    = {Johann Wolfgang Goethe},
-    title     = {Stradaniya yunogo Vertera [The Sorrows of Young Werther]},
-    year      = {1774},
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%        ОБЗОРЫ И ОСНОВЫ
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+@techreport{Collberg97Survey_en,
+  author      = {Collberg, Christian and Thomborson, Clark and Low, Douglas},
+  title       = {A Survey of Software Obfuscation Techniques},
+  institution = {Department of Computaer Science, University of Auckland},
+  year        = {1997},
+  number      = {148},
+  type        = {Technical Report}
 }
+
+@inproceedings{Szor05Metamorphic_en,
+  author    = {Szor, Peter},
+  title     = {Metamorphic Code: A Practical Approach to Evading Host-Based Intrusion Detection Systems},
+  booktitle = {Proceedings of the 11th European Institute for Computer Antivirus Research Conference (EICAR)},
+  year      = {2005},
+  note      = {Требуется уточнение страниц или более полной информации о публикации}
+}
+
+@phdthesis{Kholodov06Protection_en,
+  author = {Kholodov, Igor},
+  title  = {Software Protection through Anti-Debugging},
+  school = {Moscow State University},
+  year   = {2006},
+  type   = {PhD Thesis}
+}
+
+@article{Sharma14Evolution_en,
+  author  = {Sharma, Ashu and Sahay, S. K.},
+  title   = {Evolution and Detection of Polymorphic and Metamorphic Malwares: A Survey},
+  journal = {International Journal of Computer Applications (IJCA)},
+  year    = {2014},
+  volume  = {90},
+  number  = {2},
+  pages   = {7--11},
+  month   = {Mar}
+  % Примечание: Год 2014, как указано в ссылке. Если есть препринт 2021, это другая запись.
+}
+
+@preprint{Brezinski21Survey_en,
+  author = {Brezinski, Kenneth and Ferens, Ken},
+  title  = {Metamorphic Malware and Obfuscation -- A Survey of Techniques, Variants and Generation Kits},
+  year   = {2021},
+  month  = {Oct},
+  doi    = {10.13140/RG.2.2.19702.52802},
+  note   = {Preprint}
+}
+
+@article{Rad12Camouflage_en,
+  author  = {Rad, B. B. and Masrom, M. and Ibrahim, S.},
+  title   = {Camouflage in Malware: From Encryption to Metamorphism},
+  journal = {International Journal of Computer Science and Network Security (IJCSNS)},
+  year    = {2012},
+  volume  = {12},
+  number  = {2},
+  pages   = {74--83}
+}
+
+@inproceedings{You10MalwareSurvey_en,
+  author    = {You, I. and Yim, K.},
+  title     = {Malware Obfuscation Techniques: A Brief Survey},
+  booktitle = {Proceedings of the IEEE International Conference on Broadband, Wireless Computing, Communication and Applications (BWCCA)},
+  year      = {2010},
+  pages     = {297--300}
+}
+
+@article{Wong06Hunting_en,
+  author  = {Wong, W. and Stamp, M.},
+  title   = {Hunting for metamorphic engines},
+  journal = {Journal in Computer Virology},
+  year    = {2006},
+  volume  = {2},
+  number  = {3},
+  pages   = {211--229}
+}
+
+@inproceedings{Collberg98Manufacturing_en, % Год исправлен на 1998
+  author    = {Collberg, Christian and Thomborson, Clark and Low, Douglas},
+  title     = {Manufacturing Cheap, Resilient, and Stealthy Opaque Constructs},
+  booktitle = {Proceedings of the 25th ACM SIGPLAN-SIGACT Symposium on Principles of Programming Languages (POPL)},
+  year      = {1998},
+  pages     = {184--196}
+}
+
+@article{Campion21Learning_en,
+  author  = {Campion, Marco and Dalla Preda, Mila and Giacobazzi, Roberto},
+  title   = {Learning metamorphic malware signatures from samples},
+  journal = {Journal of Computer Virology and Hacking Techniques},
+  year    = {2021},
+  volume  = {17},
+  pages   = {167--183}
+}
+
+@article{Schrittwieser16Survey_en,
+  author  = {Schrittwieser, S. and Katzenbeisser, S. and Kinder, J. and Merzdovnik, G. and Weippl, E.},
+  title   = {A Survey on Software Protection},
+  journal = {ACM Computing Surveys (CSUR)},
+  year    = {2016},
+  volume  = {49},
+  number  = {2},
+  pages   = {1--45}, % В оригинале было 1-45, уточнил формат
+  articleno = {40} % CSUR часто использует article number
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%        ИСКУССТВЕННЫЙ ИНТЕЛЛЕКТ И КОД
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@inproceedings{Feng20CodeBERT_en,
+  author    = {Feng, Z. and Guo, D. and Tang, D. and Duan, N. and Feng, X. and Gong, M. and Shou, L. and Qin, B. and Liu, T. and Jiang, D. and Zhou, M.},
+  title     = {{CodeBERT}: A Pre-Trained Model for Programming and Natural Languages},
+  booktitle = {Findings of the Association for Computational Linguistics: EMNLP 2020},
+  year      = {2020},
+  pages     = {1536--1547}
+}
+
+@article{Chen21Evaluating_en,
+  author  = {Chen, Mark and Tworek, Jeffrey and Jun, Heewoo and Yuan, Qiming and Pinto, H. P. de Oliveira and Kaplan, Jared and Edwards, Harri and Burda, Yuri and Joseph, Nicholas and Brockman, Greg and Ray, Alex and Puri, Raul and Krueger, Gretchen and Petrov, Michael and Khlaaf, Hady and Sastry, Girish and Mishkin, Pamela and Chan, Brooke and Gray, Scott and Ryder, Nick and Pavlov, Mikhail and Power, Alethea and Kaiser, Lukasz and Bavarian, Mohammad and Winter, Clemens and Tillet, Philippe and Such, F. P. and Cummings, D. and Plappert, M. and Chantzis, F. and Barnes, E. and Herbert-Voss, A. and Guss, W. H. and Nichol, A. and Paino, A. and Tezak, N. and Tang, J. and Babuschkin, I. and Balaji, S. and Jain, S. and Saunders, W. and Hesse, C. and Carr, A. N. and Leike, J. and Achiam, J. and Misra, V. and Morikawa, E. and Radford, A. and Knight, M. and Brundage, M. and Sutskever, I. and Amodei, S. and Leach, M. and Amodei, D. and Zaremba, W.},
+  title   = {Evaluating Large Language Models Trained on Code},
+  journal = {arXiv preprint arXiv:2107.03374},
+  year    = {2021},
+  eprint  = {2107.03374},
+  archivePrefix = {arXiv}
+}
+
+@inproceedings{Choi20CodeGAN_en, % <<< ПЛЕЙСХОЛДЕР - НУЖНО ЗАПОЛНИТЬ КОРРЕКТНЫМИ ДАННЫМИ!
+  author    = {Choi, J. and Lee, J. and Kim, B. and Kim, H. K.}, % Пример авторов
+  title     = {Code Obfuscation Against Symbolic Execution Using Generative Adversarial Networks},
+  booktitle = {Proceedings of the XYZ Conference/Journal}, % Заменить XYZ Conference/Journal
+  year      = {2020},
+  pages     = {X--Y} % Заменить X--Y
+  % note      = {Необходимо найти точные выходные данные этой статьи (конференция или журнал, страницы, DOI)}
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%        МЕТРИКИ
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@article{McCabe76Complexity_en,
+  author  = {McCabe, T. J.},
+  title   = {A Complexity Measure},
+  journal = {IEEE Transactions on Software Engineering},
+  year    = {1976},
+  volume  = {SE-2},
+  number  = {4},
+  pages   = {308--320}
+}
+
+@misc{SonarSourceCogC_en,
+  author       = {{SonarSource}},
+  title        = {Cognitive Complexity: A new way of measuring understandability},
+  howpublished = {SonarSource Blog},
+  year         = {б. г.}, % Без года, так как это документация/блог, дата доступа важнее
+  note         = {URL: \url{https://www.sonarsource.com/docs/CognitiveComplexity.pdf}} % Заменить ДД.ММ.ГГГГ
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%        РЕПОЗИТОРИЙ ПРОЕКТА
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@misc{MetamorphLLMRepo_en,
+  title        = {MetamorphLLM Project Repository},
+  howpublished = {GitHub},
+  year         = {2024}, % Примерный год последнего обращения или создания, если неизвестно
+  note         = {URL: \url{https://github.com/Hekzory/MetamorphLLM/blob/master/internal/rewriter/rewriter.go}}}

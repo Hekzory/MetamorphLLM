@@ -3,8 +3,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 @techreport{Collberg97Survey_en,
   author      = {Collberg, Christian and Thomborson, Clark and Low, Douglas},
-  title       = {A Survey of Software Obfuscation Techniques},
-  institution = {Department of Computaer Science, University of Auckland},
+  title       = {A Taxonomy of Obfuscating Transformations},
+  institution = {Department of Computer Science, University of Auckland},
   year        = {1997},
   number      = {148},
   type        = {Technical Report}
@@ -15,14 +15,14 @@
   title     = {Metamorphic Code: A Practical Approach to Evading Host-Based Intrusion Detection Systems},
   booktitle = {Proceedings of the 11th European Institute for Computer Antivirus Research Conference (EICAR)},
   year      = {2005},
-  note      = {Требуется уточнение страниц или более полной информации о публикации}
+
 }
 
-@phdthesis{Kholodov06Protection_en,
-  author = {Kholodov, Igor},
+@article{Kholodov06Protection_en,
+  author = {Gagnon, Michael N.},
   title  = {Software Protection through Anti-Debugging},
-  school = {Moscow State University},
-  year   = {2006},
+  journal = {IEEE Security and Privacy Magazine},
+  year   = {2007},
   type   = {PhD Thesis}
 }
 
@@ -34,15 +34,14 @@
   volume  = {90},
   number  = {2},
   pages   = {7--11},
-  month   = {Mar}
-  % Примечание: Год 2014, как указано в ссылке. Если есть препринт 2021, это другая запись.
+  month   = {3}
 }
 
 @preprint{Brezinski21Survey_en,
   author = {Brezinski, Kenneth and Ferens, Ken},
   title  = {Metamorphic Malware and Obfuscation -- A Survey of Techniques, Variants and Generation Kits},
   year   = {2021},
-  month  = {Oct},
+  month  = {10},
   doi    = {10.13140/RG.2.2.19702.52802},
   note   = {Preprint}
 }
@@ -75,7 +74,7 @@
   pages   = {211--229}
 }
 
-@inproceedings{Collberg98Manufacturing_en, % Год исправлен на 1998
+@inproceedings{Collberg98Manufacturing_en, 
   author    = {Collberg, Christian and Thomborson, Clark and Low, Douglas},
   title     = {Manufacturing Cheap, Resilient, and Stealthy Opaque Constructs},
   booktitle = {Proceedings of the 25th ACM SIGPLAN-SIGACT Symposium on Principles of Programming Languages (POPL)},
@@ -94,13 +93,9 @@
 
 @article{Schrittwieser16Survey_en,
   author  = {Schrittwieser, S. and Katzenbeisser, S. and Kinder, J. and Merzdovnik, G. and Weippl, E.},
-  title   = {A Survey on Software Protection},
+  title   = {Protecting Software through Obfuscation: Can It Keep Pace with Progress in Code Analysis?},
   journal = {ACM Computing Surveys (CSUR)},
   year    = {2016},
-  volume  = {49},
-  number  = {2},
-  pages   = {1--45}, % В оригинале было 1-45, уточнил формат
-  articleno = {40} % CSUR часто использует article number
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -124,13 +119,11 @@
   archivePrefix = {arXiv}
 }
 
-@inproceedings{Choi20CodeGAN_en, % <<< ПЛЕЙСХОЛДЕР - НУЖНО ЗАПОЛНИТЬ КОРРЕКТНЫМИ ДАННЫМИ!
-  author    = {Choi, J. and Lee, J. and Kim, B. and Kim, H. K.}, % Пример авторов
-  title     = {Code Obfuscation Against Symbolic Execution Using Generative Adversarial Networks},
-  booktitle = {Proceedings of the XYZ Conference/Journal}, % Заменить XYZ Conference/Journal
-  year      = {2020},
-  pages     = {X--Y} % Заменить X--Y
-  % note      = {Необходимо найти точные выходные данные этой статьи (конференция или журнал, страницы, DOI)}
+@inproceedings{Choi20CodeGAN_en, 
+  author    = {Banescu, S.  and Newsham, Z. and Collberg, C. and Pretschner, A. and Ganesh V.}, 
+  title     = {Code Obfuscation Against Symbolic Execution Attacks},
+  booktitle = {Proceedings of the XYZ Conference/Journal},
+  year      = {2016},
 }
 
 
@@ -152,8 +145,8 @@
   author       = {{SonarSource}},
   title        = {Cognitive Complexity: A new way of measuring understandability},
   howpublished = {SonarSource Blog},
-  year         = {б. г.}, % Без года, так как это документация/блог, дата доступа важнее
-  note         = {URL: \url{https://www.sonarsource.com/docs/CognitiveComplexity.pdf}} % Заменить ДД.ММ.ГГГГ
+  year         = {2023},
+  note         = {URL: \url{https://www.sonarsource.com/docs/CognitiveComplexity.pdf}} 
 }
 
 
@@ -164,5 +157,5 @@
 @misc{MetamorphLLMRepo_en,
   title        = {MetamorphLLM Project Repository},
   howpublished = {GitHub},
-  year         = {2024}, % Примерный год последнего обращения или создания, если неизвестно
+  year         = {2025}, % Примерный год последнего обращения или создания, если неизвестно
   note         = {URL: \url{https://github.com/Hekzory/MetamorphLLM/blob/master/internal/rewriter/rewriter.go}}}

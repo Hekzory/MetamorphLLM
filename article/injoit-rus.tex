@@ -10,7 +10,9 @@
 % Ссылки
 \usepackage{hyperref}
 \usepackage{xcolor}
-% Правильные кавычки, подстраивающиеся под язык дкумента
+% Добавляем ragged2e для \RaggedRight команды
+\usepackage{ragged2e}
+% Правильные кавычки, подстраивающиеся под язык документа
 \usepackage{csquotes}
 % Переносы
 \usepackage{hyphenat}
@@ -104,6 +106,9 @@
 % Команды пользователя
 \input{usercommands}
 
+% Определяем preprint как псевдоним для online типа
+\DeclareBibliographyAlias{preprint}{online}
+
 %% Попробуйте настроить этот параметр, если большой рисунок вытеснил весь текст со страницы
 %% и вам это не нравится:
 % \renewcommand{\floatpagefraction}{.8}%
@@ -134,9 +139,6 @@
 
 \Source 
 
-% \bibliographystyle{gost2008}
-% \input{gost_legacy.tex}
-% \bibliography{refs}
 \nocite{*}
 \printbibliography[keyword=RU, title=Библиография]
 
